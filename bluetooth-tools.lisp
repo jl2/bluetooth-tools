@@ -24,7 +24,7 @@
                                device-path))
 
 (defun first-with-interface (interface)
-  (loop :for device :in (list-devices)
+  (loop :for device :in (list-devices :full t)
         :when (dbt:has-interface device interface)
           :return device))
 
@@ -79,24 +79,35 @@
               :for adapter = (dbt:managed-object-value ada)
               :collect (nested-get adapter "org.bluez.Adapter1" "Name")))))
 
+
 (defun list-media-controllers ()
   "List Bluetooth devices that implement the org.bluez.MediaControl1 interface."
-  (remove-if-not (rcurry #'dbt:has-interface "org.bluez.MediaControl1") (list-objects)))
+  (remove-if-not
+   (rcurry #'dbt:has-interface "org.bluez.MediaControl1")
+   (list-objects)))
 
 (defun scan (&key (timeout 5)
-                  (adapter (dbt:managed-object-name (first (list-adapters)))))
+                  (adapter (dbt:managed-object-name (first (list-adapters :full t)))))
   "Enable Bluetooth discovery on the specified adapter for timeout seconds."
-  (dbt:invoke-method-simple :system
-                        "org.bluez"
-                        adapter
-                        "org.bluez.Adapter1"
-                        "StartDiscovery")
-  (sleep timeout)
-  (dbt:invoke-method-simple :system
-                        "org.bluez"
-                        adapter
-                        "org.bluez.Adapter1"
-                        "StopDiscovery"))
+  (dbus:with-open-bus (bus (dbt:get-bus :system))
+    (dbus:invoke-method (dbus:bus-connection bus)
+                        "StartDiscovery"
+                        :arguments '()
+                        :path adapter
+                        :signature ""
+                        :interface "org.bluez.Adapter1"
+                        :destination "org.bluez")
+    
+    
+    (sleep timeout)
+    (dbus:invoke-method (dbus:bus-connection bus)
+                        "StopDiscovery"
+                        :arguments '()
+                        :path adapter
+                        :signature ""
+                        :interface "org.bluez.Adapter1"
+                        :destination "org.bluez")))
+
 (defun nested-get (dev &rest path)
   "(dbt:dbt:find-value (dbt:dbt:find-value... (dbt:dbt:find-value dev (car path) (cadr path) ...)"
   (loop :for val = dev :then (dbt:find-value val key)
@@ -111,7 +122,8 @@
 If full, return full objects, otherwise return a list of user friendly device names."
   (flet ((predicate (obj)
            (and (dbt:has-interface obj "org.bluez.Device1")
-                (every (curry #'dbt:has-interface obj) (ensure-list interfaces)))))
+                (every (curry #'dbt:has-interface obj)
+                       (ensure-list interfaces)))))
 
     (let ((devs (remove-if-not #'predicate (list-objects))))
       (if full
@@ -158,7 +170,7 @@ If full, return full objects, otherwise return a list of user friendly device na
   "Return a list of (device name . battery level) for all connected Bluetooth devices."
   (loop
     :for device :in (list-devices :interfaces '("org.bluez.Battery1")
-                                     :full t)
+                                  :full t)
     :for dev = (dbt:managed-object-value device)
     :for is-connected = (nested-get dev "org.bluez.Device1" "Connected")
     :for is-paired = (nested-get dev "org.bluez.Device1" "Paired")
