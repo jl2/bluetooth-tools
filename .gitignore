@@ -1,0 +1,9 @@
+bluetooth-tools
+manifest.txt
+.api-key
+.config
+*.fasl
+*.*fsl
+*.abcl
+*.cls
+*.abcl-tmp

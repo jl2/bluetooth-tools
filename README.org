@@ -1,0 +1,11 @@
+* bluetooth-tools
+
+** About
+Some utilities for working with BlueTooth using the BlueZ DBUS interface.
+
+** License
+ISC
+
+Copyright © 2024 Jeremiah LaRocco <jeremiah_larocco@fastmail.com>
+
+
