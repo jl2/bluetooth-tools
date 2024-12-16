@@ -3,6 +3,18 @@
 ** About
 Some utilities for working with BlueTooth using the BlueZ DBUS interface.
 
+** Examples
+
+#+begin_src lisp
+  (ql:quickload :bluetooth-tools)
+  (list (bluetooth:battery-levels)
+          (bluetooth:list-devices))
+#+end_src
+
+#+RESULTS:
+| (ATH-M50xBT2 . 30) | (ERGO M575 . 20) | (SpaceMouse Pro Wireless BT . 62) |                |          |                         |                  |             |             |             |           |     |                             |                             |                            |
+| Ion Pro RT         | CS100-AO         | Apple Wireless Keyboard           | GBK_H613E_FC76 | Flare RT | RaceBox Mini 1221405078 | Govee_H617A_2611 | 110092_603C | ATH-M50xBT2 | ATH-M50xBT2 | ERGO M575 | NIL | Wacom One pen tablet medium | Jeremiah LaRocco’s Trackpad | SpaceMouse Pro Wireless BT |
+
 ** License
 ISC
 
