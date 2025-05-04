@@ -16,17 +16,18 @@
 (in-package :bluetooth-tools)
 
 (defun inspect-device (&optional (device-path
-                                     (dbt:managed-object-name
-                                      (first-with-interface "org.bluez.MediaControl1"))))
+                                  (dbt:managed-object-name
+                                   (first-with-interface "org.bluez.MediaControl1"))))
   "Inspect a Bluez device object by device path.  Default path is the first device implementing MediaControl1."
-  (dbt:inspect-introspected-object :system
-                               "org.bluez"
-                               device-path))
+  (dbt:inspect-introspected-object :system "org.bluez"
+                                   device-path))
 
 (defun first-with-interface (interface)
-  (loop :for device :in (list-devices :full t)
-        :when (dbt:has-interface device interface)
-          :return device))
+  "Find the first device implementing `interface`."
+  (loop
+    :for device :in (list-devices :full t)
+    :when (dbt:has-interface device interface)
+      :return device))
 
 (defun volume-up (&key
                     (steps 1)
@@ -97,8 +98,8 @@
                         :signature ""
                         :interface "org.bluez.Adapter1"
                         :destination "org.bluez")
-    
-    
+
+
     (sleep timeout)
     (dbus:invoke-method (dbus:bus-connection bus)
                         "StopDiscovery"
@@ -131,7 +132,9 @@ If full, return full objects, otherwise return a list of user friendly device na
           (loop
             :for device :in devs
             :for dev = (dbt:managed-object-value device)
-            :collect (nested-get dev "org.bluez.Device1" "Name"))))))
+            :for name = (nested-get dev "org.bluez.Device1" "Name")
+            :collect (if name name
+                         (dbt:managed-object-name device)))))))
 
 (defun connect (device-path)
   "Connect to a Bluettooth device by its device-path"
@@ -204,4 +207,3 @@ If full, return full objects, otherwise return a list of user friendly device na
                       uuid)))
       (read-gatt-characteristic-by-service (car (find-if #'matches-uuid
                                                          services))))))
-
